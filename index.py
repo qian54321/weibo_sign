@@ -550,9 +550,21 @@ def run_all(context, event=None):
             else:
                 lines.append(f"<p><b>{name}</b>：执行失败 - "
                              f"{result.get('error', '未知错误')}</p>")
-        summary_text = (f"签到完成: 新签{total_success} 已签{total_already} 失败{total_fail} "
-                        f"(共{total_topics}, 账户{success_accounts}/{total_accounts})")
-        wxpusher_notify(app_token, uid_list, topic_id, '微博超话签到报告',
+        cookie_errors = [r for r in all_results
+                         if not r['result'].get('success')
+                         and 'cookie' in str(r['result'].get('error', '')).lower()]
+        if cookie_errors:
+            title = f"⚠️ Cookie过期({len(cookie_errors)}个账户) - 微博超话签到报告"
+            summary_text = (f"⚠️ {len(cookie_errors)}个账户Cookie过期! "
+                            f"新签{total_success} 已签{total_already} "
+                            f"失败{total_fail} (共{total_topics}, "
+                            f"账户{success_accounts}/{total_accounts})")
+        else:
+            title = '微博超话签到报告'
+            summary_text = (f"签到完成: 新签{total_success} 已签{total_already} "
+                            f"失败{total_fail} (共{total_topics}, "
+                            f"账户{success_accounts}/{total_accounts})")
+        wxpusher_notify(app_token, uid_list, topic_id, title,
                         ''.join(lines) or '<p>无结果</p>', summary_text)
 
     return summary
